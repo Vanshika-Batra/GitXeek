@@ -24,7 +24,7 @@ class Settings(BaseSettings):
 
     GITHUB_CLIENT_ID: str = Field(default="")
     GITHUB_CLIENT_SECRET: str = Field(default="")
-    GITHUB_REDIRECT_URI: str = Field(default="http://localhost:8000/api/v1/github/callback")
+    GITHUB_REDIRECT_URI: str = Field(default="http://localhost:8000/api/v1/auth/github/callback")
     GITHUB_OAUTH_SCOPES: str = Field(default="repo read:user user:email")
 
     REPOS_CLONE_DIR: str = Field(default="/tmp/gitxeek/repos")
