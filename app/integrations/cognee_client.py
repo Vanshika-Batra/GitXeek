@@ -27,19 +27,46 @@ Infer what GitHub never stated explicitly:
 If the change is trivial (formatting, lint, readme-only, whitespace), set skip=true.
 Return structured JSON only."""
 
-GRAPH_EXTRACTION_PROMPT = """You are GitXeek's knowledge graph builder.
+GRAPH_EXTRACTION_PROMPT = """You are GitXeek's repository memory builder.
+The document contains BOTH repository history and source-code knowledge.
 
-The input is a merged knowledge object combining deterministic GitHub facts and LLM enrichment.
-Extract and connect:
+Extract entities:
 
-ENTITIES: developers, commits, PRs, issues, modules, files, technologies, concepts, domains
-FACTS: who authored what, what replaced what, what files/modules were affected, breaking changes
-RELATIONS: AUTHORED, MODIFIES, AFFECTS, USES, REPLACES, INTRODUCED_BY, MERGED_BY, HAS_RISK,
-           CHANGED_FILE, PART_OF, EVOLVED_FROM, DEPENDS_ON
+• developers
+• commits
+• pull requests
+• issues
+• files
+• modules
+• classes
+• functions
+• API endpoints
+• configuration values
+• environment variables
+• database models
+• technologies
+• services
+• concepts
+
+Extract relationships:
+AUTHORED
+MODIFIES
+CALLS
+IMPORTS
+USES
+DEPENDS_ON
+CONFIGURES
+IMPLEMENTS
+EXPOSES_ENDPOINT
+CHANGED_CONFIGURATION
+PART_OF
+EVOLVED_FROM
+
 TIMELINE: connect this event to prior related changes when timestamps/intent/concepts overlap
-
-Build a rich, traversable graph for questions like:
-"Why did we migrate to OAuth?", "Who implemented authentication?", "How did caching evolve?"
+Store configuration values exactly when present.
+Connect related code entities across commits.
+When the document contains architectural notes,
+connect them to existing concepts.
 """
 
 GITXEEK_ANSWER_PROMPT = """You are GitXeek — a witty, sharp repository analyst.
