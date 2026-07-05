@@ -46,6 +46,7 @@ class Repository(Base):
 
     user = relationship("User", back_populates="repositories")
     conversations = relationship("Conversation", back_populates="repository", lazy="selectin")
+    artifacts = relationship("RepositoryArtifact", back_populates="repository", lazy="selectin")
 
     __table_args__ = (
         UniqueConstraint("user_id", "github_repo_id", name="uix_user_id_github_repo_id"),
