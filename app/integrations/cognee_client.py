@@ -118,20 +118,48 @@ class CogneeClient:
             "custom_prompt": GRAPH_EXTRACTION_PROMPT,
             "node_set": node_set or [merged.type, merged.module or "general"],
         }
-        await self._cognee.remember(document, **kwargs)
+        try:
+            await self._cognee.remember(document, **kwargs)
+        except Exception:
+            logger.exception(
+                "Cognee remember failed for repo %s",
+                repository_id,
+            )
 
     async def recall_context(
         self, repository_id: int, query: str, *, top_k: int = 8
     ) -> list[str]:
-        if not self.enabled:
+        try:
+            if not self.enabled:
+                return []
+            results = await self._cognee.recall(
+                query,
+                datasets=[self.dataset_name(repository_id)],
+                top_k=top_k,
+                only_context=True,
+            )
+            return _extract_texts(results)
+        except RuntimeError as e:
+            msg = str(e)
+
+            if (
+                "Recall prerequisites not met" in msg
+                or "Remote recall failed (404)" in msg
+            ):
+                logger.info(
+                    "Cognee dataset not ready yet for repo %s",
+                    repository_id,
+                )
+                return []
+
+            logger.exception("Cognee recall failed")
             return []
-        results = await self._cognee.recall(
-            query,
-            datasets=[self.dataset_name(repository_id)],
-            top_k=top_k,
-            only_context=True,
-        )
-        return _extract_texts(results)
+        except Exception:
+            logger.exception(
+                "Cognee recall failed for repo %s",
+                repository_id,
+            )
+            return []
 
     async def answer(
         self,
@@ -146,24 +174,36 @@ class CogneeClient:
         if not self.enabled:
             return ""
 
-        session = self.session_id(repository_id, user_id)
-        await self._cognee.remember(query, session_id=session)
+        try:
+            session = self.session_id(repository_id, user_id)
+            await self._cognee.remember(query, session_id=session)
 
-        system_prompt = (
-            f"{GITXEEK_ANSWER_PROMPT}\n\n"
-            f"Repository: {repo_name}\n"
-            f"Understanding level: {understanding_pct}%"
-        )
-        results = await self._cognee.recall(
-            query,
-            datasets=[self.dataset_name(repository_id)],
-            session_id=session,
-            system_prompt=system_prompt,
-            top_k=10,
-        )
-        texts = _extract_texts(results)
-        return texts[0] if texts else ""
+            system_prompt = (
+                f"{GITXEEK_ANSWER_PROMPT}\n\n"
+                f"Repository: {repo_name}\n"
+                f"Understanding level: {understanding_pct}%"
+            )
+            results = await self._cognee.recall(
+                query,
+                datasets=[self.dataset_name(repository_id)],
+                session_id=session,
+                system_prompt=system_prompt,
+                top_k=10,
+            )
+            texts = _extract_texts(results)
+            return texts[0] if texts else ""
+        except RuntimeError as e:
+            if "Recall prerequisites not met" in str(e):
+                return None
 
+            logger.exception("Cognee answer failed")
+            return None
+        except Exception:
+            logger.exception(
+                "Cognee answer failed for repo %s",
+                repository_id,
+            )
+            return None
 
 def _fallback_enrichment(normalized: NormalizedArtifact) -> LLMEnrichment:
     """Minimal enrichment when Cognee LLM is unavailable."""
