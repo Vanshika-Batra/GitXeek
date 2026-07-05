@@ -16,10 +16,13 @@ dependencies = [
     "passlib[bcrypt]>=1.7.4",
     "pyjwt>=2.10.0",
     "httpx>=0.28.0",
-    "bcrypt==4.0.1",
+    "pwdlib[argon2]>=0.3.0",
 ]
 
 [project.optional-dependencies]
+ai = [
+    "cognee>=0.3.0",
+]
 dev = [
     "httpx>=0.28.0",
     "pytest>=8.3.0",
