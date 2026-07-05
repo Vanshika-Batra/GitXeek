@@ -1,6 +1,7 @@
 from datetime import datetime
 from pathlib import Path
 
+from app.processing.progress import init_progress
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,7 +10,8 @@ from app.core.config import get_settings
 from app.core.exceptions import bad_request, conflict
 from app.integrations.git import clone_repository
 from app.integrations.github_client import GitHubClient
-from app.models.repository import Repository, Status, Visibility
+from app.models.repository import Repository, Status, Visibility, ProcessingStatus
+from app.processing.scheduler import PriorityScheduler
 from app.models.user import User
 
 
@@ -88,10 +90,15 @@ async def activate_repository(
         default_branch=default_branch,
         current_branch=default_branch,
         last_synced_at=datetime.now(),
+        processing_status=ProcessingStatus.PENDING,
+        processing_progress = init_progress()
     )
     db.add(repository)
     await db.commit()
     await db.refresh(repository)
+
+    await PriorityScheduler.get().enqueue_repository(repository.id)
+
     return _to_response(repository)
 
 
@@ -121,6 +128,8 @@ def _to_response(repo: Repository) -> RepositoryResponse:
         is_owner=repo.is_owner,
         last_synced_at=repo.last_synced_at,
         created_at=repo.created_at,
+        understanding_percentage=repo.understanding_percentage or 0,
+        processing_status=repo.processing_status or ProcessingStatus.PENDING,
     )
 
 

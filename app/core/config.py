@@ -36,7 +36,6 @@ class Settings(BaseSettings):
     LLM_API_KEY: str
     LLM_PROVIDER: str
     LLM_MODEL: str
-    LLM_ENDPOINT: str
 
 
     CORS_ORIGINS: list[str] = Field(default=["http://localhost:3000"])
