@@ -67,6 +67,42 @@ class GitHubClient:
     async def get_repository(self, owner: str, repo: str) -> dict[str, Any]:
         return await self._get(f"/repos/{owner}/{repo}")
 
+    async def list_pull_requests(
+        self, owner: str, repo: str, *, state: str = "all", per_page: int = 100, page: int = 1
+    ) -> list[dict[str, Any]]:
+        return await self._get(
+            f"/repos/{owner}/{repo}/pulls",
+            params={"state": state, "per_page": per_page, "page": page, "sort": "updated", "direction": "desc"},
+        )
+
+    async def list_issues(
+        self, owner: str, repo: str, *, state: str = "open", per_page: int = 100, page: int = 1
+    ) -> list[dict[str, Any]]:
+        issues = await self._get(
+            f"/repos/{owner}/{repo}/issues",
+            params={"state": state, "per_page": per_page, "page": page, "sort": "updated", "direction": "desc"},
+        )
+        return [issue for issue in issues if "pull_request" not in issue]
+
+    async def list_commits(
+        self, owner: str, repo: str, *, branch: str | None = None, per_page: int = 100, page: int = 1
+    ) -> list[dict[str, Any]]:
+        params: dict[str, Any] = {"per_page": per_page, "page": page}
+        if branch:
+            params["sha"] = branch
+        return await self._get(f"/repos/{owner}/{repo}/commits", params=params)
+
+    async def get_commit(self, owner: str, repo: str, sha: str) -> dict[str, Any]:
+        return await self._get(f"/repos/{owner}/{repo}/commits/{sha}")
+
+    async def list_releases(
+        self, owner: str, repo: str, *, per_page: int = 20, page: int = 1
+    ) -> list[dict[str, Any]]:
+        return await self._get(
+            f"/repos/{owner}/{repo}/releases",
+            params={"per_page": per_page, "page": page},
+        )
+
     async def _get(self, path: str, params: dict[str, Any] | None = None) -> Any:
         async with httpx.AsyncClient(base_url=self.BASE_URL, timeout=30.0) as client:
             response = await client.get(path, headers=self._headers(), params=params)

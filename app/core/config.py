@@ -30,6 +30,15 @@ class Settings(BaseSettings):
     REPOS_CLONE_DIR: str = Field(default="/tmp/gitxeek/repos")
     FRONTEND_URL: str = Field(default="http://localhost:3000")
 
+    COGNEE_SERVICE_URL: str
+    COGNEE_API_KEY: str
+
+    LLM_API_KEY: str
+    LLM_PROVIDER: str
+    LLM_MODEL: str
+    LLM_ENDPOINT: str
+
+
     CORS_ORIGINS: list[str] = Field(default=["http://localhost:3000"])
 
 

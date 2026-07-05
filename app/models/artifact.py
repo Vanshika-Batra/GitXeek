@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import Enum
-from platform import release
-from sqlalchemy import Column, DateTime, Enum as SQLEnum, ForeignKey, Integer, String
+
+from sqlalchemy import Column, DateTime, Enum as SQLEnum, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 
@@ -31,8 +31,13 @@ class RepositoryArtifact(Base):
     )
     normalized_data = Column(JSONB, nullable=True)
     enriched_data = Column(JSONB, nullable=True)
+    merged_data = Column(JSONB, nullable=True)
     skip_reason = Column(String, nullable=True)
     created_at = Column(DateTime, nullable=False, default=datetime.now)
     updated_at = Column(DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
 
     repository = relationship("Repository", back_populates="artifacts")
+
+    __table_args__ = (
+        UniqueConstraint("repository_id", "artifact_type", "source_id", name="uix_repo_artifact_source"),
+    )
