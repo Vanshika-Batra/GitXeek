@@ -1046,6 +1046,7 @@ source = { editable = "." }
 dependencies = [
     { name = "alembic" },
     { name = "asyncpg" },
+    { name = "cognee" },
     { name = "fastapi" },
     { name = "gunicorn" },
     { name = "httpx" },
@@ -1059,9 +1060,6 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
-ai = [
-    { name = "cognee" },
-]
 dev = [
     { name = "httpx" },
     { name = "pytest" },
@@ -1073,7 +1071,7 @@ dev = [
 requires-dist = [
     { name = "alembic", specifier = ">=1.14.0" },
     { name = "asyncpg", specifier = ">=0.30.0" },
-    { name = "cognee", marker = "extra == 'ai'", specifier = ">=0.3.0" },
+    { name = "cognee", specifier = ">=0.3.0" },
     { name = "fastapi", specifier = ">=0.115.0" },
     { name = "gunicorn", specifier = ">=23.0.0" },
     { name = "httpx", specifier = ">=0.28.0" },
@@ -1089,7 +1087,7 @@ requires-dist = [
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.36" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.32.0" },
 ]
-provides-extras = ["ai", "dev"]
+provides-extras = ["dev"]
 
 [[package]]
 name = "greenlet"

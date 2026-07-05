@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from app.models.repository import Status, Visibility
+from app.models.repository import Status, Visibility, ProcessingStatus
 
 
 class GitHubRepoResponse(BaseModel):
@@ -33,5 +33,7 @@ class RepositoryResponse(BaseModel):
     is_owner: bool
     last_synced_at: datetime | None
     created_at: datetime
+    understanding_percentage: int = 0
+    processing_status: ProcessingStatus = ProcessingStatus.PENDING
 
     model_config = {"from_attributes": True}

@@ -56,6 +56,7 @@ class Repository(Base):
         default=ProcessingStatus.PENDING,
     )
     processing_progress = Column(JSONB, nullable=False, default=init_progress)
+    cognee_dataset_name = Column(String, nullable=True)
     last_synced_at = Column(DateTime, nullable=True)
     default_branch = Column(String, nullable=True)
     current_branch = Column(String, nullable=True)
