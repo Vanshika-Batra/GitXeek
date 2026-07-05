@@ -81,6 +81,29 @@ class MergedKnowledgeObject(BaseModel):
     dependencies: list[str] = Field(default_factory=list)
     business_impact: str | None = None
 
+class CodeKnowledge(BaseModel):
+    path: str
+    purpose: str | None = None
+    summary: str | None = None
+    technologies: list[str] = Field(default_factory=list)
+    frameworks: list[str] = Field(default_factory=list)
+    classes: list[str] = Field(default_factory=list)
+    functions: list[str] = Field(default_factory=list)
+    api_endpoints: list[str] = Field(default_factory=list)
+    imports: list[str] = Field(default_factory=list)
+    configuration: dict[str, str] = Field(default_factory=dict)
+    environment_variables: list[str] = Field(default_factory=list)
+    database_models: list[str] = Field(default_factory=list)
+    dependencies: list[str] = Field(default_factory=list)
+    architectural_role: str | None = None
+    security_notes: list[str] = Field(default_factory=list)
+    concepts: list[str] = Field(default_factory=list)
+    behavior_changes: list[str] = Field(default_factory=list)
+    architectural_notes: str | None = None
+
+class RepositoryKnowledgeDocument(BaseModel):
+    artifact: MergedKnowledgeObject
+    code_changes: list[CodeKnowledge] = Field(default_factory=list)
 
 class ProcessedArtifact(BaseModel):
     normalized: NormalizedArtifact

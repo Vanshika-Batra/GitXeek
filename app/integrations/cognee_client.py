@@ -1,9 +1,10 @@
 import json
 import logging
 from typing import Any
+from pathlib import Path
 
 from app.core.config import get_settings
-from app.processing.schemas import LLMEnrichment, MergedKnowledgeObject, NormalizedArtifact
+from app.processing.schemas import LLMEnrichment, MergedKnowledgeObject, NormalizedArtifact, CodeKnowledge, RepositoryKnowledgeDocument
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +75,60 @@ Answer using ONLY the retrieved knowledge graph context.
 Be precise about who changed what, when, and why. Short, catchy, 2-4 sentences.
 Use bullets only for 3+ items. Never invent facts not in context."""
 
+CODE_ANALYZER_PROMPT = """
+You are GitXeek's source code analyzer. You are given:
+
+- a repository file path
+- the full source code of that file
+
+Your job is to extract structured repository knowledge.
+Do NOT summarize every line of code. Instead infer the role of the file. Return structured information for:
+PURPOSE- What is this file responsible
+SUMMARY- One concise description.
+TECHNOLOGIES- Frameworks, libraries and external services used.
+CLASSES- User-defined classes.
+FUNCTIONS- Public or important functions.
+API_ENDPOINTS- HTTP routes or RPC endpoints exposed.
+CONFIGURATION- Important configuration values.
+- Examples:
+  - CORS settings
+  - Redis configuration
+  - JWT settings
+  - Database URL
+  - OAuth providers
+  - Cache configuration
+  - Queue configuration
+
+ENVIRONMENT_VARIABLES- Environment variables referenced.
+DATABASE_MODELS- ORM models or schemas defined.
+DEPENDENCIES- Internal services or modules this file depends on.
+ARCHITECTURAL_ROLE
+- Examples:
+    Authentication
+    Configuration
+    API
+    Background Worker
+    Middleware
+    Database
+    Repository Layer
+    Service Layer
+
+SECURITY_NOTES
+- Authentication
+- Authorization
+- Encryption
+- Secrets
+- Tokens
+- Permissions
+- CORS
+- Rate limiting
+
+CONCEPTS- High-level business or technical concepts.
+
+Only return factual information present or strongly implied by the source code.
+Do not invent APIs, classes, configuration or behavior.
+"""
+
 
 class CogneeClient:
     """Cognee integration — LLM enrichment, graph indexing, and query answering."""
@@ -131,6 +186,7 @@ class CogneeClient:
         self,
         repository_id: int,
         merged: MergedKnowledgeObject,
+        code_knowledge: CodeKnowledge,
         *,
         node_set: list[str] | None = None,
     ) -> None:
@@ -139,7 +195,13 @@ class CogneeClient:
             logger.warning("Cognee not installed — merged knowledge not indexed")
             return
 
-        document = json.dumps(merged.model_dump(mode="json"), indent=2)
+        # document = json.dumps(merged.model_dump(mode="json"), indent=2)
+        knowledge = RepositoryKnowledgeDocument(
+            artifact=merged,
+            code_analysis=code_knowledge,
+        )
+
+        document = knowledge.model_dump_json(indent=2)
         kwargs: dict[str, Any] = {
             "dataset_name": self.dataset_name(repository_id),
             "custom_prompt": GRAPH_EXTRACTION_PROMPT,
@@ -231,6 +293,39 @@ class CogneeClient:
                 repository_id,
             )
             return None
+
+    async def analyze_file_with_llm(self, path: Path) -> CodeKnowledge:
+        print("in code analyze with llm")
+        if not self.enabled:
+            return CodeKnowledge(path=str(path))
+
+        try:
+            from cognee.infrastructure.llm.LLMGateway import LLMGateway
+
+            content = path.read_text(
+                encoding="utf-8",
+                errors="ignore",
+            )
+            payload = json.dumps(
+                {
+                    "path": str(path),
+                    "content": content,
+                },
+                indent=2,
+            )
+            result = await LLMGateway.acreate_structured_output(
+                payload,
+                CODE_ANALYZER_PROMPT,
+                CodeKnowledge,
+            )
+            return result
+
+        except Exception:
+            logger.exception(
+                "Failed to analyze %s",
+                path,
+            )
+            return CodeKnowledge(path=str(path))
 
 def _fallback_enrichment(normalized: NormalizedArtifact) -> LLMEnrichment:
     """Minimal enrichment when Cognee LLM is unavailable."""

@@ -29,6 +29,7 @@ from app.processing.progress import (
     mark_task_complete,
 )
 from app.processing.schemas import NormalizedArtifact
+from app.processing.code_analyzer import code_analyzer
 
 logger = logging.getLogger(__name__)
 
@@ -252,12 +253,26 @@ class ProcessingPipeline:
         )
 
         repo.processing_progress = progress
+        print("about to process files......: ")
+        
+        code_knowledge = []
 
+        if (
+            processed.merged
+            and processed.merged.files
+        ):
+            code_knowledge = await code_analyzer.analyze(
+                repo_path=Path(repo.clone_path),
+                merged=processed.merged,
+            )
+
+        print("processed the code...:", code_knowledge)
         if not processed.skipped and processed.merged:
             print("sending to cognee for merging.......")
             await self._cognee.index_merged_knowledge(
                 repo.id,
                 processed.merged,
+                code_knowledge,
                 node_set=[normalized.category, normalized.artifact_type, normalized.module or "general"],
             )
         await db.commit()
