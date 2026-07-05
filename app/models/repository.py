@@ -29,13 +29,14 @@ class Repository(Base):
     url = Column(String, nullable=False)
     clone_path = Column(String, nullable=True)
     status = Column(
-        SQLEnum(Status, name="repository_status", values_callable=lambda enum_cls: [e.value for e in enum_cls]), 
-            nullable=False, 
-            default=Status.ACTIVE)
+        SQLEnum(Status, name="repository_status", values_callable=lambda enum_cls: [e.value for e in enum_cls]),
+        nullable=False,
+        default=Status.ACTIVE,
+    )
     visibility = Column(
-        SQLEnum(Visibility, name="repository_visibility", values_callable=lambda enum_cls: [e.value for e in enum_cls]), 
-        nullable=False, 
-        default=Visibility.PRIVATE
+        SQLEnum(Visibility, name="repository_visibility", values_callable=lambda enum_cls: [e.value for e in enum_cls]),
+        nullable=False,
+        default=Visibility.PRIVATE,
     )
     last_synced_at = Column(DateTime, nullable=True)
     default_branch = Column(String, nullable=True)

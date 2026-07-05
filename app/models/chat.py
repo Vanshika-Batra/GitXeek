@@ -37,13 +37,12 @@ class Message(Base):
     conversation_id = Column(Integer, ForeignKey("conversations.id"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     content = Column(String, nullable=False)
-    role = Column(SQLEnum(Role, name="message_role"), nullable=False)
+    role = Column(
+        SQLEnum(Role, name="message_role", values_callable=lambda e: [x.value for x in e]),
+        nullable=False,
+    )
     created_at = Column(DateTime, nullable=False, default=datetime.now)
     updated_at = Column(DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
 
     conversation = relationship("Conversation", back_populates="messages")
     user = relationship("User", back_populates="messages")
-
-    __table_args__ = (
-        UniqueConstraint("conversation_id", "user_id", name="uix_conversation_id_user_id"),
-    )
