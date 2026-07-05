@@ -2,10 +2,11 @@ from datetime import datetime
 from enum import Enum
 
 from sqlalchemy import Boolean, Column, DateTime, Enum as SQLEnum, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 
 from app.db.session import Base
-
+from app.processing.progress import init_progress
 
 class Visibility(str, Enum):
     PUBLIC = "public"
@@ -15,6 +16,13 @@ class Visibility(str, Enum):
 class Status(str, Enum):
     ACTIVE = "active"
     INACTIVE = "inactive"
+
+
+class ProcessingStatus(str, Enum):
+    PENDING = "pending"
+    PROCESSING = "processing"
+    READY = "ready"
+    FAILED = "failed"
 
 
 class Repository(Base):
@@ -38,6 +46,16 @@ class Repository(Base):
         nullable=False,
         default=Visibility.PRIVATE,
     )
+    processing_status = Column(
+        SQLEnum(
+            ProcessingStatus,
+            name="repository_processing_status",
+            values_callable=lambda enum_cls: [e.value for e in enum_cls],
+        ),
+        nullable=False,
+        default=ProcessingStatus.PENDING,
+    )
+    processing_progress = Column(JSONB, nullable=False, default=init_progress)
     last_synced_at = Column(DateTime, nullable=True)
     default_branch = Column(String, nullable=True)
     current_branch = Column(String, nullable=True)
